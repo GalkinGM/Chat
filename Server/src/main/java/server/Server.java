@@ -56,6 +56,38 @@ public class Server {
         }
     }
 
+    public void privateMsg(ClientHandler sender, String receiver, String msg){
+        String message = String.format("[ %s ] to [ %s ]: %s", sender.getNickname(), receiver, msg);
+        for (ClientHandler c : clients) {
+            if(c.getNickname().equals(receiver)){
+                c.sendMsg(message);
+                if (!c.equals(sender)){
+                    sender.sendMsg(message);
+                }
+                return;
+            }
+        }
+        sender.sendMsg("user not found" + receiver);
+    }
+
+
+
+//    public synchronized void privatMsg(ClientHandler sender, String userNick, String msg) {
+//        String message = String.format("[%s] to [ %s ]: %s", sender.getNickname(), userNick, msg);
+//        for (ClientHandler c : clients) {
+//            if(c.getNickname().equals(userNick)){
+//                c.sendMsg(msg);
+//                if (!c.equals(sender)){
+//                    sender.sendMsg(message);
+//                }
+//                return;
+//            }
+//        }
+//        sender.sendMsg("user");
+//    }
+
+
+
     public void subscribe(ClientHandler clientHandler){
         clients.add(clientHandler);
     }

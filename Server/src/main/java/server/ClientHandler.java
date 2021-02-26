@@ -15,12 +15,14 @@ public class ClientHandler {
 
     private String nickname;
 
+
     public ClientHandler(Server server, Socket socket) {
         try {
             this.server = server;
             this.socket = socket;
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
+
 
             new Thread(() -> {
                 try {
@@ -47,23 +49,58 @@ public class ClientHandler {
                                 System.out.println("client: " + socket.getRemoteSocketAddress() +
                                         " connected with nick: " + nickname);
                                 break;
-                            } else {
+                            }
+
+                                {
                                 sendMsg("Неверный логин / пароль");
                             }
 
                         }
                     }
                     //цикл работы
+//                    while (true) {
+//                        String str = in.readUTF();
+//
+//                        if (str.startsWith("/")) {
+//                            if (str.equals(Command.END)) {
+//                                out.writeUTF(Command.END);
+//                                break;
+//                            }
+//
+//                            if (str.startsWith(Command.PRIVATE_MSG)){
+//                                String[] token = str.split("\\s ", 3);
+//                                if(token.length<3){
+//                                    continue;
+//                                }
+//                                    server.privateMsg(this, token[1], token[2]);
+//
+//                            }
+//                        } else {
+//                        server.broadcastMsg(this, str);
+//                        }
+//                    }
+
                     while (true) {
                         String str = in.readUTF();
 
-                        if (str.equals(Command.END)) {
-                            out.writeUTF(Command.END);
-                            break;
-                        }
+                        if (str.startsWith("/")) {
+                            if (str.equals(Command.END)) {
+                                out.writeUTF(Command.END);
+                                break;
+                            }
 
-                        server.broadcastMsg(this, str);
+                            if (str.startsWith(Command.PRIVATE_MSG)) {
+                                String[] token = str.split("\\s", 3);
+                                if (token.length < 3) {
+                                    continue;
+                                }
+                                server.privateMsg(this, token[1], token[2]);
+                            }
+                        } else {
+                            server.broadcastMsg(this, str);
+                        }
                     }
+
                 } catch (RuntimeException e) {
                     System.out.println(e.getMessage());
                 } catch (IOException e) {
