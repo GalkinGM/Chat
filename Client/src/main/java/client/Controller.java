@@ -24,6 +24,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -101,61 +103,81 @@ public class Controller implements Initializable {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
+
+
             new Thread(() -> {
                 try {
-                    // цикл аутентификации
-                    while (true) {
-                        String str = in.readUTF();
+                    // тайм аут сокет
 
-                        if (str.startsWith("/")) {
-                            if (str.equals(Command.END)) {
-                                throw new RuntimeException("Сервак нас отключает");
-                            }
-                            if (str.startsWith(Command.AUTH_OK)) {
-                                String[] token = str.split("\\s");
-                                nickname = token[1];
-                                setAuthenticated(true);
-                                break;
-                            }
+                    socket.setSoTimeout(5000);
 
-                            if (str.equals(Command.REG_OK)){
-                                regController.setResultTryToReg(Command.REG_OK);
 
-                            }
-                            if (str.equals(Command.REG_NO)){
-                                regController.setResultTryToReg(Command.REG_NO);
-                            }
 
-                        } else {
-                            textArea.appendText(str + "\n");
+                        // цикл аутентификации
+                        while (true) {
+                            String str = in.readUTF();
+
+                            if (str.startsWith("/")) {
+                                if (str.equals(Command.END)) {
+                                    throw new RuntimeException("Сервак нас отключает");
+                                }
+                                if (str.startsWith(Command.AUTH_OK)) {
+                                    socket.setSoTimeout(0);
+                                    String[] token = str.split("\\s");
+                                    nickname = token[1];
+                                    setAuthenticated(true);
+                                    break;
+                                }
+
+                                if (str.equals(Command.REG_OK)) {
+                                    regController.setResultTryToReg(Command.REG_OK);
+
+                                }
+                                if (str.equals(Command.REG_NO)) {
+                                    regController.setResultTryToReg(Command.REG_NO);
+                                }
+
+                            } else {
+                                textArea.appendText(str + "\n");
+                            }
                         }
-                    }
-                    //цикл работы
-                    while (true) {
-                        String str = in.readUTF();
+                        //цикл работы
+                        while (true) {
+                            String str = in.readUTF();
 
 
-                        if (str.startsWith("/")){
-                            if (str.equals(Command.END)) {
-                                System.out.println("Client disconnected");
-                                break;
+                            if (str.startsWith("/")) {
+                                if (str.equals(Command.END)) {
+                                    System.out.println("Client disconnected");
+                                    break;
+                                }
+                                if (str.startsWith(Command.CLIENT_LIST)) {
+                                    String[] token = str.split("\\s");
+                                    Platform.runLater(() -> {
+                                        clientList.getItems().clear();
+                                        for (int i = 0; i < token.length; i++) {
+                                            clientList.getItems().add(token[i]);
+
+                                        }
+                                    });
+                                }
+
+                            } else {
+                                textArea.appendText(str + "\n");
                             }
-                            if (str.startsWith(Command.CLIENT_LIST)){
-                                String[] token = str.split("\\s");
-                                Platform.runLater(()->{
-                                    clientList.getItems().clear();
-                                    for (int i = 0; i < token.length; i++) {
-                                        clientList.getItems().add(token[i]);
 
-                                    }
-                                });
-                            }
-
-                        }else {
-                            textArea.appendText(str + "\n");
                         }
 
+                }
+                catch (SocketTimeoutException e){
+                    System.out.println("время аутентификации истекло");
+                    try {
+                        out.writeUTF(Command.END);
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
                     }
+
+
                 } catch (RuntimeException e) {
                     System.out.println(e.getMessage());
                 } catch (IOException e) {
