@@ -7,7 +7,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
-public class RegController  {
+public class ChengNickNameController {
 
 
     @FXML
@@ -17,6 +17,8 @@ public class RegController  {
     @FXML
     private TextField nicknameField;
     @FXML
+    private TextField newNickNameField;
+    @FXML
     private TextArea textArea;
 
     private  Controller controller;
@@ -24,31 +26,30 @@ public class RegController  {
     public void setController(Controller controller) {
         this.controller = controller;
     }
-    public  void  setResultTryToReg (String connand){
-        if (connand.equals(Command.REG_OK)){
+    public  void  setResultTryToChengNickName (String connand){
+        if (connand.equals(Command.CHENGNICKNAME_OK)){
             textArea.clear();
-            textArea.appendText("Регистрация прошла успешно");
+            textArea.appendText("NickName изменен");
         }
 
-        if (connand.equals(Command.REG_NO)){
+        if (connand.equals(Command.CHENGNICKNAME_NO)){
             textArea.clear();
-            textArea.appendText("Имя уже занято");
+            textArea.appendText("NickName уже занят");
         }
 
     }
 
-    public void tryToReg(ActionEvent actionEvent) {
+    public void tryToChengNickName(ActionEvent actionEvent) {
         String login = loginField.getText().trim();
         String password = passwordField.getText().trim();
         String nickname = nicknameField.getText().trim();
+        String newNickName = newNickNameField.getText().trim();
 
-
-
-        if( login.length()*password.length()*nickname.length() ==0){
+        if( login.length()*password.length()*nickname.length()*newNickName.length() ==0){
             return;
         }
 
-        controller.registration(login, password, nickname);
+        controller.chengNickName (login, password, nickname, newNickName);
 
     }
 }

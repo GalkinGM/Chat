@@ -17,6 +17,7 @@
         <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS" promptText="password" onAction="#tryToAuth"/>
         <Button text="auth" onAction="#tryToAuth" minWidth="100"/>
         <Button text="reg" onAction="#showRegWindow" minWidth="100"/>
+        <Button text="chengNick" onAction="#showChengNickNameWindow" minWidth="100"/>
     </HBox>
 
 

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Server {
-    private final int PORT = 8190;
+    private final int PORT = 8191;
     private ServerSocket server;
     private Socket socket;
     private DataInputStream in;
@@ -58,7 +58,16 @@ public class Server {
         }
     }
 
+
+//    public void broadcastMsg(ClientHandler sender, String msg){
+//        String message = String.format("[ %s ]: %s", sender.getNickname(), msg);
+//        for (ClientHandler c : clients) {
+//            c.sendMsg(message);
+//        }
+//    }
+
     public void privateMsg(ClientHandler sender, String receiver, String msg){
+
         String message = String.format("[ %s ] to [ %s ]: %s", sender.getNickname(), receiver, msg);
         for (ClientHandler c : clients) {
             if(c.getNickname().equals(receiver)){
@@ -72,6 +81,21 @@ public class Server {
         sender.sendMsg("user not found" + receiver);
     }
 
+
+//    public void privateMsg(ClientHandler sender, String receiver, String msg){
+//        String message = String.format("[ %s ] to [ %s ]: %s", sender.getNickname(), receiver, msg);
+//        for (ClientHandler c : clients) {
+//            if(c.getNickname().equals(receiver)){
+//                c.sendMsg(message);
+//                if (!c.equals(sender)){
+//                    sender.sendMsg(message);
+//                }
+//                return;
+//            }
+//        }
+//        sender.sendMsg("user not found" + receiver);
+//    }
+
     public void broadcastClientlist(){
         StringBuilder sb = new StringBuilder(Command.CLIENT_LIST);
         for (ClientHandler c : clients) {
@@ -83,23 +107,6 @@ public class Server {
         }
 
     }
-
-
-
-//    public synchronized void privatMsg(ClientHandler sender, String userNick, String msg) {
-//        String message = String.format("[%s] to [ %s ]: %s", sender.getNickname(), userNick, msg);
-//        for (ClientHandler c : clients) {
-//            if(c.getNickname().equals(userNick)){
-//                c.sendMsg(msg);
-//                if (!c.equals(sender)){
-//                    sender.sendMsg(message);
-//                }
-//                return;
-//            }
-//        }
-//        sender.sendMsg("user");
-//    }
-
 
 
     public void subscribe(ClientHandler clientHandler){
@@ -125,4 +132,11 @@ public class Server {
         }
         return false;
     }
+
+
+
+
+
+
+
 }
