@@ -6,17 +6,23 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.sql.SQLException;
 
 public class ClientHandler {
     private Server server;
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+//    private MessageDB messageDB;
+
 
     private String nickname;
+    private String login;
 
 
     public ClientHandler(Server server, Socket socket) {
+        MessageDB msgDB = new MessageDB();
         try {
             this.server = server;
             this.socket = socket;
@@ -26,6 +32,8 @@ public class ClientHandler {
 
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(5000);
+
                     // цикл аутентификации
                     while (true) {
                         String str = in.readUTF();
@@ -41,45 +49,53 @@ public class ClientHandler {
                             }
                             String newNick = server.getAuthService()
                                     .getNicknameByLoginAndPassword(token[1], token[2]);
-
+                            login = token[1];
                             if (newNick != null) {
-                                nickname = newNick;
-                                sendMsg(Command.AUTH_OK + " " + nickname);
-                                server.subscribe(this);
-                                System.out.println("client: " + socket.getRemoteSocketAddress() +
-                                        " connected with nick: " + nickname);
-                                break;
+                                if(!server.isLoginAuthenticated(login)){
+                                    nickname = newNick;
+                                    sendMsg(Command.AUTH_OK + " " + nickname);
+                                    server.subscribe(this);
+                                    System.out.println("client: " + socket.getRemoteSocketAddress() +
+                                            " connected with nick: " + nickname);
+                                    break;
+                                }
+                                else {
+                                    sendMsg("Данная учетная запись уже используется");
+                                }
                             }
-
-                                {
+                                else {
                                 sendMsg("Неверный логин / пароль");
                             }
+                        }
+                        // регистрация
+                        if (str.startsWith(Command.REG)){
+                            String[] token = str.split("\\s", 4);
+                            if (token.length < 4) {
+                                continue;
+                            }
+                            boolean regSuccess =server.getAuthService().registration(token[1],token[2],token[3]);
+                            if (regSuccess){
+                                sendMsg(Command.REG_OK);
+                            }else {sendMsg(Command.REG_NO);}
+
+                        }
+
+                        if (str.startsWith(Command.CHENGNICKNAME)){
+                            String[] token = str.split("\\s", 5);
+                            if (token.length < 5) {
+                                continue;
+                            }
+                            System.out.println( token[1]+token[2]+token[3]+token[4]);
+                            boolean chengSuccess =server.getAuthService().chengNickName(token[1],token[2],token[3],token[4]);
+                            if (chengSuccess){
+                                sendMsg(Command.CHENGNICKNAME_OK);
+                            }else {sendMsg(Command.CHENGNICKNAME_NO);}
 
                         }
                     }
-                    //цикл работы
-//                    while (true) {
-//                        String str = in.readUTF();
-//
-//                        if (str.startsWith("/")) {
-//                            if (str.equals(Command.END)) {
-//                                out.writeUTF(Command.END);
-//                                break;
-//                            }
-//
-//                            if (str.startsWith(Command.PRIVATE_MSG)){
-//                                String[] token = str.split("\\s ", 3);
-//                                if(token.length<3){
-//                                    continue;
-//                                }
-//                                    server.privateMsg(this, token[1], token[2]);
-//
-//                            }
-//                        } else {
-//                        server.broadcastMsg(this, str);
-//                        }
-//                    }
+                    socket.setSoTimeout(0);
 
+                    //цикл работы
                     while (true) {
                         String str = in.readUTF();
 
@@ -89,21 +105,31 @@ public class ClientHandler {
                                 break;
                             }
 
-                            if (str.startsWith(Command.PRIVATE_MSG)) {
+                            if (str.startsWith(Command.PRIVATE_MSG)){
                                 String[] token = str.split("\\s", 3);
-                                if (token.length < 3) {
+                                if ( token.length < 3){
                                     continue;
                                 }
+                                System.out.println(token[0]);
+
                                 server.privateMsg(this, token[1], token[2]);
+
+                               msgDB.MessageDBs (this, token[1], token[2]);
                             }
                         } else {
                             server.broadcastMsg(this, str);
                         }
                     }
+                } catch (SocketTimeoutException e){
+                    sendMsg(Command.END);
 
                 } catch (RuntimeException e) {
                     System.out.println(e.getMessage());
                 } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                } catch (ClassNotFoundException e) {
                     e.printStackTrace();
                 } finally {
                     server.unsubscribe(this);
@@ -130,5 +156,9 @@ public class ClientHandler {
 
     public String getNickname() {
         return nickname;
+    }
+
+    public String getLogin() {
+        return login;
     }
 }
